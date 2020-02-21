@@ -1,5 +1,6 @@
 import subprocess
 import glob
+from prevent_overwrite import prevent_overwrite
 
 def make_madj_gpr_list(madjgprdir, madjgprlist):
     """Makes a list of all masliner adjusted gpr files at highest scan intensity
@@ -8,8 +9,10 @@ def make_madj_gpr_list(madjgprdir, madjgprlist):
         madjgprdir: the directory where the masliner adjusted gpr files are
             NOTE: assumes that all files of the form "madj*.gpr" in this
                 directory should be used
-        madjgprlist: the name (path) of the output file
+        madjgprlist: the path to the output list file
     """
+	# Do not overwrite madjgprlist if it already exists
+	prevent_overwrite(madjgprlist)
     # Navigate to madjgprdir after saving current working directory
     cwd = subprocess.os.getcwd()
     subprocess.os.chdir(madjgprdir)
@@ -20,22 +23,24 @@ def make_madj_gpr_list(madjgprdir, madjgprlist):
     subprocess.os.chdir(cwd)
     # The last file in the list should be at the highest scan intensity
     # Extract the main filename of this last file (everything except #-8.gpr)
-    hi_int = files[-1][:-7]
+    highint = files[-1][:-7]
     # Find all filenames matching the main part of this filename
-    hi_int_files = [filename for filename in files if hi_int in filename]
+    highintfiles = [filename for filename in files if highint in filename]
     # Write list to madjgprlist
     with open(madjgprlist, 'w') as f:
-        for filename in hi_int_files:
+        for filename in highintfiles:
             f.write(filename + '\n')
 
 def make_spatial_detrend_comfile(madjgprlist, analysisfile, comfile):
-    """Makes a comfile for running the spatial detrending process
+    """Makes a comfile for performing spatial detrending
 
     Inputs:
-       madjgprlist: the name (path) of the list of masliner adjusted gpr files
-       analysisfile: the name (path) of the analysis file
-       comfile: the name (path) of the output comfile
+       madjgprlist: the path to the list of masliner adjusted gpr files
+       analysisfile: the path to the analysis file
+       comfile: the path to the output comfile
     """
+	# Do not overwrite comfile if it already exists
+	prevent_overwrite(comfile)
     # Open comfile for writing
     with open(comfile, 'w') as f:
         f.write('perl /project/siggers/perl/GENEPIX/gpr_file_process_conc_series.pl\n')
@@ -44,16 +49,16 @@ def make_spatial_detrend_comfile(madjgprlist, analysisfile, comfile):
         f.write('-keep_ctrl\n-output_norm_files\n-o norm\n-f1med')
 
 def run_spatial_detrend_comfile(comfile, madjgprdir):
-    """Runs the comfile that performs spatial detrending
+    """Runs a comfile for performing spatial detrending
 
     Inputs:
-        comfile: the name (path) of the comfile to run
-        madjgprdir: the directory where the masliner adjusted gpr files are
+        comfile: the path to the comfile to run
+        madjgprdir: the directory where the masliner adjusted gpr files are stored
     """
     # Navigate to madjgprdir after saving current working directory
     cwd = subprocess.os.getcwd()
     subprocess.os.chdir(madjgprdir)
-    # NOTE: Change run_comfile_alert.pl path!!
+    # NOTE: Change run_comfile_alert.pl path maybe?
     subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
             comfile + ' -qsub customprobes')
     # Navigate back to original directory

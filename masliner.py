@@ -1,17 +1,33 @@
 import subprocess
 import glob
+from prevent_overwrite import prevent_overwrite
 
-def make_experiment_description(gprdir, exp_desc):
-	"""Generates experiment description file
+def to_488(gprdir):
+	"""Converts the 635s and 647s to 488s in gpr files
 
 	Inputs:
-		gprdir: the path to the directory where the gpr files are saved
-			e.g. /projectnb/siggers/pbmdata/gpr/Recruitome/v2_array/258566410001/488_scan/
-			NOTE: this function assumes that all files in this directory ending
-				in ".gpr" should be included in the experiment description file
-		exp_desc: the name (path) of the experiment description file to generate
-			e.g. ./experiment_description.txt
+		gprdir: the path to the directory where the gpr files are stored
 	"""
+	# Save a list of all files in gprdir that end in ".gpr"
+	files = glob.glob(gprdir + '/*.gpr')
+	for filename in files:
+		# Replace "635" and "647" with "488" if they follow "B" or "F" in each file
+		subprocess.run(['sed', '-i', '-E', 's/(B|F)(635|647)/\\1488/g', filename])
+
+def make_experiment_description(gprdir, expdesc):
+	"""Makes an experiment description file
+
+	Inputs:
+		gprdir: the path to the directory where the gpr files are stored
+			NOTE: This function assumes that all files in this directory ending
+				in ".gpr" should be included in the experiment description file.
+			NOTE: This function also assumes that all relevant files end in 
+				"[0-9]-8.gpr" and can therefore be separated into chambers by
+				looking at the last 7 characters of the filename
+		expdesc: the path to the experiment description file to generate
+	"""
+	# Do not overwrite expdesc if it already exists
+	prevent_overwrite(expdesc)
 	# Navigate to gprdir after saving current directory
 	cwd = subprocess.os.getcwd()
 	subprocess.os.chdir(gprdir)
@@ -21,14 +37,13 @@ def make_experiment_description(gprdir, exp_desc):
 	# Navigate back to original directory (allows user to input relative paths)
 	subprocess.os.chdir(cwd)
 	# Store the possible file endings (chambers) in a set to get a unique list
-	# NOTE: this assumes the file names end in '#-8.gpr'
-	chamber_set = set(filename[-7:] for filename in files)
+	chamberset = set(filename[-7:] for filename in files)
 	# Convert set to a list so it can be sorted
-	chamber_list = list(chamber_set)
-	chamber_list.sort()
+	chamberlist = list(chamberset)
+	chamberlist.sort()
 	# Open experiment description file for writing
-	with open(exp_desc, 'w') as f:
-		for chamber in chamber_list:
+	with open(expdesc, 'w') as f:
+		for chamber in chamberlist:
 			# Write the header for this chamber
 			f.write('Pbm=1\nConcentration=100\nCy3=FOO\n')
 			# Find all the file names matching this chamber and write to file
@@ -38,27 +53,28 @@ def make_experiment_description(gprdir, exp_desc):
 			# Add an empty line between chambers
 			f.write('\n')
 
-def make_masliner_comfile(exp_desc, comfile):
-	"""Generates comfile for running masliner
+def make_masliner_comfile(expdesc, comfile):
+	"""Makes a comfile for running masliner
 
 	Inputs:
-		exp_desc: the name (path) of the experiment description file to use
-		comfile: the name (path) of the comfile to generate
+		expdesc: the path to the experiment description file to use
+		comfile: the path to the comfile to create
 	"""
+	# Do not overwrite comfile if it already exists
+	prevent_overwrite(comfile)
 	# Open file for writing
 	with open(comfile, 'w') as f:
 		f.write('perl /project/siggers/perl/GENEPIX/masliner_list.pl\n')
-		f.write('-i ' + exp_desc) 
+		f.write('-i ' + expdesc) 
 
 def run_masliner_comfile(gprdir, comfile):
-	"""Runs comfile for running masliner
+	"""Runs a comfile for running masliner
 
 	Inputs:
-		 gprdir: the path to the directory where the gpr files are saved
-		 	e.g. /projectnb/siggers/pbmdata/gpr/Recruitome/v2_array/258566410001/488_scan/
-		comfile: the ABSOLUTE path to the comfile to run
+		gprdir: the path to the directory where the gpr files are stored
+		comfile: the path to the comfile to run
 	"""
-	# NOTE: update run_comfile_alert.pl path after -P option updated!!
+	# NOTE: update run_comfile_alert.pl path???
 	# Navigate to gprdir after saving current directory
 	cwd = subprocess.os.getcwd()
 	subprocess.os.chdir(gprdir)
