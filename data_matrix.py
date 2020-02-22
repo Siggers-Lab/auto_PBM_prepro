@@ -3,12 +3,16 @@ import subprocess
 from prevent_overwrite import prevent_overwrite
 
 def make_avg_gpr_list(avggprdirs, avgtype, outdir):
-	"""Makes a file listing full paths of averaged gpr files
+	"""Makes a file listing full paths of averaged gpr files at 488 and 647/635
 
 	Inputs:
 		avggprdirs: a list of the directories containing the averaged gpr files
-		avgtype: the type of averaging that was performed; must be one of ('or', 'br', 'r')
+		avgtype: the type of averaging that was performed; must be one of ('or', 'br', 'o1', 'o2')
+			NOTE: averaging over orientations ('r') is separated here into 'o1' and 'o2'
 		outdir: the directory in which to save the output list file
+	
+	Output:
+		the path to the output list file
 	"""
 	# Use avgtype to determine file naming schema
 	filename = ''
@@ -16,38 +20,27 @@ def make_avg_gpr_list(avggprdirs, avgtype, outdir):
 		filename = 'or_norm_madj*.gpr'
 	if avgtype == 'br':
 		filename = 'o1o2top_br_norm_madj*.gpr'
-	if avgtype == 'r':
-		filename = 'o[1,2]match_r_norm_madj*.gpr'
+	if avgtype == 'o1':
+		filename = 'o1match_r_norm_madj*.gpr'
+	if avgtype == 'o2':
+		filename = 'o2match_r_norm_madj*.gpr'
 	# Make an empty list to store file paths
 	files = []
 	# Add files matching file naming schema from each directory in avggprdirs
 	for avggprdir in avggprdirs:
 		files += glob.glob(avggprdir + '/' + filename)
+	# Sort file list
 	files.sort()
-	# Write output file for 'or' and 'br' options
-	if avgtype in ['or', 'br']:
-		# Do not overwrite file if it already exists
-		prevent_overwrite(outdir + '/' + avgtype + '_gpr.list')
-		# Open file for writing
-		with open(outdir + '/' + avgtype + '_gpr.list', 'w') as f:
-			for filename in files:
-				f.write(filename + '\n')
-	# Write two output files for 'r' option
-	elif avgtype == 'r':
-		# Sort files into o1 and o2 groups
-		o1 = [filename for filename in files if 'o1match' in filename]
-		o2 = [filename for filename in files if 'o2match' in filename]
-		# Do not overwrite files if they already exist
-		prevent_overwrite(outdir + '/o1_gpr.list')
-		prevent_overwrite(outdir + '/o2_gpr.list')
-		# Write list of o1 files
-		with open(outdir + '/o1_gpr.list', 'w') as f:
-			for filename in o1:
-				f.write(filename + '\n')
-		# Write list of o2 files
-		with open(outdir + '/o2_gpr.list', 'w') as f:
-			for filename in o2:
-				f.write(filename + '\n')
+	# Construct filename for output list
+	avggprlist = outdir + '/' + avgtype + '_gpr.list'
+	# Do not overwrite avggprlist if it already exists
+	prevent_overwrite(avggprlist)
+	# Open avggprlist for writing
+	with open(avggprlist, 'w') as f:
+		for filename in files:
+			f.write(filename + '\n')
+	# Return path to output list
+	return(avggprlist)
 
 def make_data_matrix_comfile(avggprlist, comfile, datmat):
 	"""Makes a comfile for creating a data matrix
@@ -81,6 +74,33 @@ def run_data_matrix_comfile(comfile, avgtype):
 	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
 			comfile + ' -qsub ' + avgtype + 'matrix')
 
+def data_matrix_wrapper(avggprdirs, outdir, matprefix):
+	"""Creates data matrices for each of the three averaging methods
 
+	Inputs:
+		avggprdirs: a list of the paths to the directories where the 488 and
+			635/647 averaged gpr files are stored
+		outdir: the path to the directory in which to save all new files
+		matprefix: a prefix for the names of the data matrices
+	"""
+	# Make outdir
+	subprocess.run(['mkdir', outdir])
+	# Navigate to outdir after saving current working directory
+	cwd = subprocess.os.getcwd()
+	subprocess.os.chdir(outdir)
+	# Make a data matrix for each of the four groups of averaged gpr files
+	for avgtype in ['or', 'br', 'o1', 'o2']:
+		# Make a list of all the averaged gpr files for this avgtype
+		avggprlist = make_avg_gpr_list(avggprdirs, avgtype, outdir)
+		# Construct path to comfile
+		comfile = outdir + '/make_datamatrix_' + avgtype + '.com'
+		# Construct path to output data matrix
+		datmat = outdir + '/' + matprefix + '_' + avgtype + '.dat'
+		# Make a comfile for making a data matrix 
+		make_data_matrix_comfile(avggprlist, comfile, datmat)
+		# Run data matrix comfile
+		run_data_matrix_comfile(comfile, avgtype)
+	# Navigate back to original working directory
+	subprocess.os.chdir(cwd)
 
 

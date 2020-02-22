@@ -54,5 +54,29 @@ def run_average_probes_comfile(comfile, avgtype):
 	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
 			comfile + ' -qsub avg_' + avgtype)
 
+def average_probes_wrapper(normgprdir, avggprdir):
+	"""Averages probe intensities three ways for all normalized gpr files in a directory
+
+	Inputs:
+		normgprdir: the path to the directory containing the masliner adjusted,
+			spatially detrended gpr files to use
+		avgdir: the path to the directory in which to save the output files
+	"""
+	# Make avggprdir
+	subprocess.run(['mkdir', avggprdir])
+	# Navigate to avggprdir after saving current working directory
+	cwd = subprocess.os.getcwd()
+	subprocess.os.chdir(avggprdir)
+	# Make a file listing all the normalized gpr files to use
+	normgprlist = avggprdir + '/norm_gpr.list'
+	make_norm_gpr_list(normgprdir, normgprlist)
+	# Make and run a comfile for averaging probe intensities each of three ways
+	for avgtype in ['or', 'br', 'r']:
+		comfile = 'average_probes_' + avgtype + '.com'
+		make_average_probes_comfile(normgprlist, avgtype, comfile)
+		run_average_probes_comfile(comfile, avgtype)
+	# Navigate back to original directory
+	subprocess.os.chdir(cwd)
+
 
 

@@ -84,6 +84,32 @@ def run_masliner_comfile(gprdir, comfile):
 	# Navigate back to original directory
 	subprocess.os.chdir(cwd)
 
+def masliner_wrapper(gprdir, maslinerdir):
+	"""Runs masliner on all gpr files in a given directory
 
-
+	Inputs:
+		gprdir: the path to the directory where the gpr files are saved
+		maslinerdir: the path to the directory in which to save the output files
+	"""
+	# Get a list of all files in gprdir before running masliner
+	beforefiles = glob.glob(gprdir + '/*')
+	# If gprdir contains "635" or "647", change headers of gpr files
+	if '635' or '647' in gprdir:
+		to_488(gprdir)
+	# Make experiment description file in gprdir
+	expdesc = gprdir + '/experiment_description.txt'
+	make_experiment_description(gprdir, expdesc)
+	# Make masliner comfile in gprdir
+	comfile = gprdir + '/masliner.com'
+	make_masliner_comfile(expdesc, comfile)
+	# Run masliner comfile
+	run_masliner_comfile(gprdir, comfile)
+	# Get a list of all files in gprdir after running masliner
+	afterfiles = glob.glob(gprdir + '/*')
+	# Get a list of all new files in gprdir
+	newfiles = [filename for filename in afterfiles if filename not in beforefiles]
+	# Make a new directory and move all new files to this directory
+	subprocess.run(['mkdir', maslinerdir])
+	for filename in newfiles:
+		subprocess.run(['mv', filename, maslinerdir])
 

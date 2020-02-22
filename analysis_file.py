@@ -1,5 +1,55 @@
 import subprocess
+import glob
 from prevent_overwrite import prevent_overwrite
+
+def check_analysis_file(analysisdir):
+	"""Checks if there is an analysis file in a given directory
+
+	Inputs:
+		analysisdir: the directory to check for an analysis file
+	
+	Output:
+		If there is already one analysis file in the directory:
+			the path to the analysis file
+		If there is no analysis file in the directory:
+			the path to the "*DNAFront_BCBottom*.tdt" file in the directory
+			the path to the "*SequenceList*.txt" file in the directory
+			the path to a "*.gpr" file in the directory
+	"""
+	# Check for a file in analysisdir of the form "*analysis*.txt"
+	analysisfile = glob.glob(analysisdir + '/*analysis*.txt')
+	# If no files match, check for files needed to make new analysis file
+	if len(analysisfile) < 1:
+		design = glob.glob(analysisdir + '/*DNAFront_BCBottom*.tdt')
+		sequence = glob.glob(analysisdir + '/*SequenceList*.txt')
+		gpr = glob.glob(analysisdir + '/*.gpr')
+		# Make sure there is exactly one file for each of design and sequence
+		if len(design) > 1:
+			raise FileExistsError('There is more than one file of the form "*DNAFront_BCBottom*.tdt" in ' +
+					analysisdir + '\nPlease remove extra files and try again')
+		if len(sequence) > 1:
+			raise FileExistsError('There is more than one file of the form "*SequenceList*.txt" in ' +
+					analysisdir + '\nPlease remove extra files and try again')
+		if len(design) < 1:
+			raise FileNotFoundError('There is no file of the form "*DNAFront_BCBottom*.tdt" in ' +
+					analysisdir + '\nPlease make sure such a file exists and try again')
+		if len(sequence) < 1:
+			raise FileNotFoundError('There is no file of the form "*SequenceList*.txt" in ' +
+					analysisdir + '\nPlease make sure such a file exists and try again')
+		# Make sure there is at least one gpr file
+		if len(gpr) < 1:
+			raise FileNotFoundError('There is no file of the form "*.gpr" in ' +
+					analysisdir + '\nPlease make sure such a file exists and try again')
+		# NOTE: if there is more than one gpr file, only one is used
+		# If all the files exist, return their paths
+		return([design[0], sequence[0], gpr[0]])
+	# If exactly one file matches the analysis file pattern, return its path
+	elif len(analysisfile) == 1:
+		return(analysisfile)
+	# If more than one file matches the analysis file pattern, abort
+	else:
+		raise FileExistsError('There is more than one file of the form "*analysis*.txt" in ' +
+				analysisdir + '\nPlease remove extra files and try again')
 
 def make_analysis_comfile(design, sequence, gpr, comfile):
 	"""Makes a comfile for creating an analysis file
@@ -34,3 +84,34 @@ def run_analysis_comfile(comfile, analysis):
 	subprocess.os.system('perl /project/siggers/perl/MISC/run_comfile_alert.pl -com ' +
 			comfile + ' > ' + analysis)
 
+def analysis_file_wrapper(analysisdir):
+	"""Checks for an analysis file and creates one if it doesn't exist
+
+	Inputs:
+		analysisdir: the directory to check for an analysis file
+	
+	Output:
+		the path to the analysis file (that may be newly created)
+	"""
+	# Check if there is an analysis file in analysisdir
+	analysis = check_analysis_file(analysisdir)
+	# If length of analysis is 3, then make a new analysis file
+	if len(analysis) == 3:
+		# Make analysis comfile
+		analysiscom = analysisdir + '/make_analysis_file.com'
+		make_analysis_comfile(analysis[0], analysis[1],
+				analysis[2], analysiscom)
+		# Extract ID number from filename of design file
+		endID = analysis[0].index('_D_DNAFront_BCBottom')
+		startID = analysis[0].rindex('_', 0, endID) + 1
+		ID = analysis[0][startID:endID]
+		# Construct analysis file name
+		analysisfile = analysisdir + '/ID_' + ID + '_genomic_analysis.txt'
+		# Run analysis comfile
+		run_analysis_comfile(analysiscom, analysisfile)
+		# Return analysis file name
+		return(analysisfile)
+	# If length of analysis is 1, then there's already an analysis file
+	elif len(analysis) == 1:
+		# Return analysis file name
+		return(analysis[0])
