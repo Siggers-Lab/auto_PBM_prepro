@@ -50,16 +50,22 @@ def run_pipeline(analysisdir, gpr488dir, gpr647dir, outdir, matprefix):
 	data_matrix.data_matrix_wrapper(avggprdirs, outdir, matprefix)
 
 # Create object for handling command line arguments
-parser = argparse.ArgumentParser(description = 'Pipeline for preprocessing PBM data') #,
-		#usage = 'python preprocess_pipeline.py -a <analysis_directory>')
+parser = argparse.ArgumentParser(description = 'Pipeline for preprocessing PBM data')
 parser.add_argument('analysis_dir',
-		help = 'the absolute path to the directory where the analysis file is saved or should be created')
+		help = 'the absolute path to the directory where the analysis file ' +
+		'is saved or should be created. NOTE: The analysis file must be of ' +
+		'the form *analysis*.txt. If the analysis file does not already ' +
+		'exist, this directory must contain the three files necessary to ' +
+		'create a new analysis file: *DNAfront_BCBottom*.txt, ' +
+		'*SequenceList*.txt, and *.gpr')
 parser.add_argument('gpr_dirs', nargs = 2,
-		help = 'the absolute paths to the two directories (488 and 635/647) where the gpr files are saved')
+		help = 'the absolute paths to the two directories (488 and 635/647) ' +
+		'where the gpr files are saved. NOTE: This requires exactly two arguments.')
 parser.add_argument('output_dir',
-		help = 'the absolute path to the directory where the output data matrices should be saved')
+		help = 'the absolute path to the directory where the output data ' +
+		'matrices should be saved')
 parser.add_argument('-p', '-prefix', default = '',
-		help = 'the prefix to add to the filenames for the output data matrices')
+		help = 'the prefix to add to the filenames of the output data matrices')
 # Parse out arguments
 args = parser.parse_args()
 # Call pipeline wrapper function on command line arguments
