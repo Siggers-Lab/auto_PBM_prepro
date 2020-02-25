@@ -61,9 +61,9 @@ def run_spatial_detrend_comfile(comfile, madjgprdir):
 	# Read contents of comfile as single string on one line
 	with open(comfile) as f:
 		comfilecont = f.read().replace('\n', ' ')
-	# Run contents of masliner comfile
-	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
-	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	# Run comfile
+	print('qsub -sync y -P siggers -m a -cwd -N customprobes -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N customprobes -V -b y ' + comfilecont)
 	# Navigate back to original directory
 	subprocess.os.chdir(cwd)
 

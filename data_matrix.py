@@ -73,9 +73,9 @@ def run_data_matrix_comfile(comfile, avgtype):
 	# Read contents of comfile as single string on one line
 	with open(comfile) as f:
 		comfilecont = f.read().replace('\n', ' ')
-	# Run contents of masliner comfile
-	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
-	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	# Run comfile
+	print('qsub -sync y -P siggers -m a -cwd -N ' + avgtype + '_matrix -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N ' + avgtype + '_matrix -V -b y ' + comfilecont)
 
 def data_matrix_wrapper(avggprdirs, outdir, matprefix):
 	"""Creates data matrices for each of the three averaging methods
