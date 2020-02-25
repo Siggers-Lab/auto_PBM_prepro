@@ -1,5 +1,5 @@
-import glob
 import subprocess
+import glob
 from prevent_overwrite import prevent_overwrite
 
 def make_avg_gpr_list(avggprdirs, avgtype, outdir):
@@ -70,9 +70,12 @@ def run_data_matrix_comfile(comfile, avgtype):
 		avgtype: the type of averaging that was done; must be one of ('or', 'br', 'r')
 			This affects the names of the error and output files
 	"""
-	# NOTE: Change the path to run_comfile_alert.pl at some point maybe???
-	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
-			comfile + ' -qsub ' + avgtype + 'matrix')
+	# Read contents of comfile as single string on one line
+	with open(comfile) as f:
+		comfilecont = f.read().replace('\n', ' ')
+	# Run contents of masliner comfile
+	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
 
 def data_matrix_wrapper(avggprdirs, outdir, matprefix):
 	"""Creates data matrices for each of the three averaging methods

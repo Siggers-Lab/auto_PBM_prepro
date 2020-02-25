@@ -58,9 +58,12 @@ def run_spatial_detrend_comfile(comfile, madjgprdir):
 	# Navigate to madjgprdir after saving current working directory
 	cwd = subprocess.os.getcwd()
 	subprocess.os.chdir(madjgprdir)
-	# NOTE: Change run_comfile_alert.pl path maybe?
-	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
-			comfile + ' -qsub customprobes')
+	# Read contents of comfile as single string on one line
+	with open(comfile) as f:
+		comfilecont = f.read().replace('\n', ' ')
+	# Run contents of masliner comfile
+	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
 	# Navigate back to original directory
 	subprocess.os.chdir(cwd)
 

@@ -49,10 +49,12 @@ def run_average_probes_comfile(comfile, avgtype):
 		avgtype: the type of averaging to perform; must be one of ('or', 'br', 'r')
 			This affects the names of the output and error files for this job
 	"""
-	# Run the comfile
-	# NOTE: change the path to run_comfile_alert.pl eventually maybe
-	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
-			comfile + ' -qsub avg_' + avgtype)
+	# Read contents of comfile as single string on one line
+	with open(comfile) as f:
+		comfilecont = f.read().replace('\n', ' ')
+	# Run contents of masliner comfile
+	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
 
 def average_probes_wrapper(normgprdir, avggprdir):
 	"""Averages probe intensities three ways for all normalized gpr files in a directory

@@ -74,13 +74,15 @@ def run_masliner_comfile(gprdir, comfile):
 		gprdir: the path to the directory where the gpr files are stored
 		comfile: the path to the comfile to run
 	"""
-	# NOTE: update run_comfile_alert.pl path???
 	# Navigate to gprdir after saving current directory
 	cwd = subprocess.os.getcwd()
 	subprocess.os.chdir(gprdir)
-	# Run masliner comfile
-	subprocess.os.system('perl /projectnb/siggers/data/rebekah_project/run_comfile_alert.pl -com ' +
-			comfile + ' -qsub masliner')
+	# Read contents of comfile as single string on one line
+	with open(comfile) as f:
+		comfilecont = f.read().replace('\n', ' ')
+	# Run contents of masliner comfile
+	print('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
+	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N masliner -V -b y ' + comfilecont)
 	# Navigate back to original directory
 	subprocess.os.chdir(cwd)
 
