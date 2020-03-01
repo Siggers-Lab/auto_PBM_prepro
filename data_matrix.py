@@ -1,5 +1,6 @@
 import subprocess
 import glob
+import logging
 from prevent_overwrite import prevent_overwrite
 
 def make_avg_gpr_list(avggprdirs, avgtype, outdir):
@@ -7,8 +8,10 @@ def make_avg_gpr_list(avggprdirs, avgtype, outdir):
 
 	Inputs:
 		avggprdirs: a list of the directories containing the averaged gpr files
-		avgtype: the type of averaging that was performed; must be one of ('or', 'br', 'o1', 'o2')
-			NOTE: averaging over orientations ('r') is separated here into 'o1' and 'o2'
+		avgtype: the type of averaging that was performed:
+			must be one of ('or', 'br', 'o1', 'o2')
+			NOTE: averaging over orientations ('r') is separated here
+				into 'o1' and 'o2'
 		outdir: the directory in which to save the output list file
 	
 	Output:
@@ -58,7 +61,8 @@ def make_data_matrix_comfile(avggprlist, comfile, datmat):
 	prevent_overwrite(datmat)
 	# Open comfile for writing
 	with open(comfile, 'w') as f:
-		f.write('perl /project/siggers/perl/GENEPIX/control_sequence_process.pl\n\n')
+		f.write('perl /project/siggers/perl/GENEPIX/' +
+				'control_sequence_process.pl\n\n')
 		f.write('-l ' + avggprlist + '\n')
 		f.write('-o ' + datmat)
 
@@ -67,15 +71,18 @@ def run_data_matrix_comfile(comfile, avgtype):
 
 	Inputs:
 		comfile: the comfile to run
-		avgtype: the type of averaging that was done; must be one of ('or', 'br', 'r')
+		avgtype: the type of averaging that was done:
+			must be one of ('or', 'br', 'r')
 			This affects the names of the error and output files
 	"""
 	# Read contents of comfile as single string on one line
 	with open(comfile) as f:
 		comfilecont = f.read().replace('\n', ' ')
 	# Run comfile
-	print('qsub -sync y -P siggers -m a -cwd -N ' + avgtype + '_matrix -V -b y ' + comfilecont)
-	subprocess.os.system('qsub -sync y -P siggers -m a -cwd -N ' + avgtype + '_matrix -V -b y ' + comfilecont)
+	logging.info('qsub -sync y -P siggers -m a -cwd -N ' + avgtype +
+			'_matrix -V -b y ' + comfilecont + '\n')
+	subprocess.run(['qsub', '-sync', 'y', '-P', 'siggers', '-m', 'a', '-cwd',
+		'-N', avgtype + '_matrix', '-V', '-b', 'y', comfilecont])
 
 def data_matrix_wrapper(avggprdirs, outdir, matprefix):
 	"""Creates data matrices for each of the three averaging methods
@@ -86,22 +93,24 @@ def data_matrix_wrapper(avggprdirs, outdir, matprefix):
 		outdir: the path to the directory in which to save all new files
 		matprefix: a prefix for the names of the data matrices
 	"""
-	# Make outdir
-	subprocess.run(['mkdir', outdir])
 	# Navigate to outdir after saving current working directory
 	cwd = subprocess.os.getcwd()
 	subprocess.os.chdir(outdir)
 	# Make a data matrix for each of the four groups of averaged gpr files
 	for avgtype in ['or', 'br', 'o1', 'o2']:
 		# Make a list of all the averaged gpr files for this avgtype
+		logging.info('Making a list of all ' + avgtype + ' averaged gpr files')
 		avggprlist = make_avg_gpr_list(avggprdirs, avgtype, outdir)
 		# Construct path to comfile
 		comfile = outdir + '/make_datamatrix_' + avgtype + '.com'
 		# Construct path to output data matrix
 		datmat = outdir + '/' + matprefix + '_' + avgtype + '.dat'
 		# Make a comfile for making a data matrix 
+		logging.info('Making ' + avgtype + ' data matrix comfile')
 		make_data_matrix_comfile(avggprlist, comfile, datmat)
 		# Run data matrix comfile
+		logging.info('Running ' + avgtype + ' data matrix comfile ' +
+			'(this may take a few minutes)')
 		run_data_matrix_comfile(comfile, avgtype)
 	# Navigate back to original working directory
 	subprocess.os.chdir(cwd)
