@@ -67,7 +67,9 @@ def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
 # Setting add_help to False allows required arguments to be printed before
 #	optional arguments in help message
 parser = argparse.ArgumentParser(add_help = False,
-		description = 'Pipeline for preprocessing PBM data')
+		description = 'Pipeline for preprocessing PBM data',
+		usage = 'python preprocess_pipeline.py -a ANALYSIS_DIR ' +
+		'-g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [-h]')
 # Add groups for both required and optional arguments
 requiredargs = parser.add_argument_group('required arguments')
 optionalargs = parser.add_argument_group('optional arguments')
