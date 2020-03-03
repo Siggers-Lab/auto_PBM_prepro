@@ -6,7 +6,14 @@ import average_probes
 import data_matrix
 import argparse
 import logging
+import sys
 from prevent_overwrite import prevent_overwrite
+
+if sys.version_info[0] != 3:
+	print("This script requires Python version 3!\n" +
+			"Please run the following command and then try again:\n" +
+			"module load python3")
+	sys.exit(1)
 
 def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
 	"""Wrapper that runs the full PBM preprocessing pipeline
