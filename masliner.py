@@ -1,6 +1,7 @@
 import subprocess
 import glob
 import logging
+from natsort import natsorted
 from prevent_overwrite import prevent_overwrite
 
 def to_488(gprdir):
@@ -35,14 +36,14 @@ def make_experiment_description(gprdir, expdesc):
 	subprocess.os.chdir(gprdir)
 	# Save a sorted list of all files in gprdir that end in ".gpr"
 	files = glob.glob('*.gpr')
-	files.sort()
+	files = natsorted(files)
 	# Navigate back to original directory (allows user to input relative paths)
 	subprocess.os.chdir(cwd)
 	# Store the possible file endings (chambers) in a set to get a unique list
 	chamberset = set(filename[-7:] for filename in files)
 	# Convert set to a list so it can be sorted
 	chamberlist = list(chamberset)
-	chamberlist.sort()
+	chamberlist = natsorted(chamberlist)
 	# Open experiment description file for writing
 	with open(expdesc, 'w') as f:
 		for chamber in chamberlist:

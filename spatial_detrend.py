@@ -1,6 +1,7 @@
 import subprocess
 import glob
 import logging
+from natsort import natsorted
 from prevent_overwrite import prevent_overwrite
 
 def make_madj_gpr_list(madjgprdir, madjgprlist):
@@ -19,7 +20,7 @@ def make_madj_gpr_list(madjgprdir, madjgprlist):
 	subprocess.os.chdir(madjgprdir)
 	# Get a list of all masliner adjusted gpr files and make sure they're sorted
 	files = glob.glob("madj*.gpr")
-	files.sort()
+	files = natsorted(files)
 	# Navigate back to original directory (allows relative paths)
 	subprocess.os.chdir(cwd)
 	# The last file in the list should be at the highest scan intensity

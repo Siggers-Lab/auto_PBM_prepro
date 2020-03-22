@@ -1,6 +1,7 @@
 import subprocess
 import glob
 import logging
+from natsort import natsorted
 from prevent_overwrite import prevent_overwrite
 
 def make_norm_gpr_list(normgprdir, normgprlist):
@@ -17,7 +18,7 @@ def make_norm_gpr_list(normgprdir, normgprlist):
 	prevent_overwrite(normgprlist)
 	# Get full paths to all files in normgprdir of the form 'norm_madj*.gpr'
 	files = glob.glob(normgprdir + '/norm_madj*.gpr')
-	files.sort()
+	files = natsorted(files)
 	# Write list to normgprlist
 	with open(normgprlist, 'w') as f:
 		for filename in files:
