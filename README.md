@@ -54,7 +54,7 @@ If this is the first time an array design has been used, a new directory should 
 ### gpr_dirs
 *the full path(s) to the directory or directories containing the gpr files to analyze*
 
-This directory or these directories must contain the gpr files to analyze, separated by wavelength. Generally, there will be two directories, one at a wavelength of 488 and one at a wavelength of 635/647. In some cases, there may be only the 488 directory. The pipeline will use all files in these directories of the form "\*.gpr". To ensure proper sorting of the gpr files, the file names must list the laser power setting before the gain setting.
+This directory or these directories must contain the gpr files to analyze, separated by wavelength. Generally, there will be two directories, one at a wavelength of 488 and one at a wavelength of 635/647. In some cases, there may be only the 488 directory. The pipeline will use all files in these directories of the form "\*.gpr". To ensure proper sorting of the gpr files, the filenames must list the laser power setting before the gain setting.
 
 ### output_dir
 *the full path to the directory in which to save the output data matrix files*
