@@ -16,7 +16,7 @@ if sys.version_info[0] != 3:
             "module load python3")
     sys.exit(1)
 
-def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
+def run_pipeline(analysisdir, gprdirs, exclude, r2cutoff, outdir, matprefix):
     """Wrapper that runs the full PBM preprocessing pipeline
 
     Inputs:
@@ -27,22 +27,30 @@ def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
                 *SequenceList*.txt
                 *.gpr
         gprdirs: a list of the paths to the directories containing the gpr files
-        outdir: the path to the directory where the output data matrices should be saved
-        matprefix: the prefix to add to the filenames of the output data matrices
+        exclude: a list of gpr files to exclude from analysis
+        r2cutoff: the minimum acceptable value for the R^2 values in the
+            masliner output
+        outdir: the path to the directory where the output data matrices
+            should be saved
+        matprefix: the prefix to add to the filenames of the output
+            data matrices
     """
     # Create outdir if it doesn't already exist
     if not subprocess.os.path.exists(outdir):
         subprocess.run(['mkdir', outdir])
-    
+
     # Create a logfile to track progress and errors
     logfile = outdir + '/' + matprefix + '_logfile'
-    
+
     # Do not overwrite logfile if it already exists
     prevent_overwrite(logfile)
-    
+
     # Configure logging settings
     logging.basicConfig(filename = logfile, level = logging.INFO,
             format = '%(levelname)s:%(message)s')
+
+    # Save the command that was used to invoke the pipeline
+    logging.info('Script was invoked: python ' + ' '.join(sys.argv) + '\n')
 
     # Check for analysis file and create one if necessary
     # Save path to analysis file
@@ -51,14 +59,14 @@ def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
     # Run masliner
     madjgprdirs = [gprdir + '/masliner' for gprdir in gprdirs]
     for i in range(len(gprdirs)):
-        masliner.masliner_wrapper(gprdirs[i], madjgprdirs[i])
+        masliner.masliner_wrapper(gprdirs[i], exclude, madjgprdirs[i], r2cutoff)
 
     # Perform spatial detrending
     normgprdirs = [gprdir + '/spatial_detrend' for gprdir in gprdirs]
     for i in range(len(gprdirs)):
         spatial_detrend.spatial_detrend_wrapper(madjgprdirs[i], analysisfile,
                 normgprdirs[i])
-    
+
     # Average probe intensities
     avggprdirs = [gprdir + '/average_probes' for gprdir in gprdirs]
     for i in range(len(gprdirs)):
@@ -74,7 +82,7 @@ def run_pipeline(analysisdir, gprdirs, outdir, matprefix):
 parser = argparse.ArgumentParser(add_help = False,
         description = 'Pipeline for preprocessing PBM data',
         usage = 'python preprocess_pipeline.py -a ANALYSIS_DIR ' +
-        '-g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [-h]')
+        '-g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [options]')
 
 # Add groups for both required and optional arguments
 requiredargs = parser.add_argument_group('required arguments')
@@ -103,6 +111,15 @@ requiredargs.add_argument('-o', '--output_dir', required = True,
 requiredargs.add_argument('-p', '--prefix', required = True,
         help = 'the prefix to add to the filenames of the output data matrices')
 
+# Add optional argument for gpr files to exclude
+optionalargs.add_argument('-e', '--exclude', default = None, nargs = '+',
+        help = 'the list of gpr files to exclude from analysis (default: None)')
+
+# Add optional argument for masliner R^2 value cutoff
+optionalargs.add_argument('-r', '--r2cutoff', default = 0.9, type = float,
+        help = 'the minimum acceptable value for the R^2 values in ' +
+        'the masliner output (default: 0.9)')
+
 # Add optional help argument back in
 optionalargs.add_argument('-h', '--help', action = 'help',
         default = argparse.SUPPRESS, help = 'show this help message and exit')
@@ -111,6 +128,7 @@ optionalargs.add_argument('-h', '--help', action = 'help',
 args = parser.parse_args()
 
 # Call pipeline wrapper function on arguments
-run_pipeline(args.analysis_dir, args.gpr_dirs, args.output_dir, args.prefix)
+run_pipeline(args.analysis_dir, args.gpr_dirs, args.exclude, args.r2cutoff,
+        args.output_dir, args.prefix)
 
 
