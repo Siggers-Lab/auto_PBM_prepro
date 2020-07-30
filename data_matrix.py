@@ -1,7 +1,6 @@
 import subprocess
 import glob
 import logging
-from natsort import natsorted
 from prevent_overwrite import prevent_overwrite
 
 def make_avg_gpr_list(avggprdirs, avgtype, outdir):
@@ -33,11 +32,15 @@ def make_avg_gpr_list(avggprdirs, avgtype, outdir):
     files = []
     
     # Add files matching file naming schema from each directory in avggprdirs
-    for avggprdir in avggprdirs:
-        files += glob.glob(avggprdir + '/' + filename)
-    
-    # Sort file list
-    files = natsorted(files)
+    for avggprdir in sorted(avggprdirs):
+        # Find all files in this directory matching naming schema
+        dirfiles = glob.glob(avggprdir + '/' + filename)
+
+        # Sort files by chamber
+        dirfiles = sorted(dirfiles, key = lambda x: x[-7:])
+
+        # Append sorted file list to list of all files
+        files += dirfiles
     
     # Construct filename for output list
     avggprlist = outdir + '/' + avgtype + '_gpr.list'
