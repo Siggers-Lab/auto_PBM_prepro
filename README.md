@@ -24,18 +24,20 @@ module load python3
 ## Usage
 To run the pipeline, use the following command:
 ```
-python preprocess_pipeline.py -a ANALYSIS_DIR -g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [-h]
+python preprocess_pipeline.py -a ANALYSIS_DIR -g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [options]
 ```
 NOTE: You do NOT need to submit this as a batch job using the qsub command; the pipeline itself will submit batch jobs for any steps that require it.
 
 ## Arguments
-There are four required arguments for the pipeline, described below.
-| Flag |     Name     | Description |
-|------|--------------|-------------|
-|  -a  | analysis_dir | the full path to the directory where the analysis file is saved OR should be created |
-|  -g  |   gpr_dirs   | the full path(s) to the directory or directories containing the gpr files to analyze |
-|  -o  |  output_dir  | the full path to the directory in which to save the output data matrix files |
-|  -p  |    prefix    | the prefix to add to the names of the output data matrix files |
+There are four required arguments and two optional arguments for the pipeline, described below.
+| Flag |     Name     | Required | Description |
+|------|--------------|----------|-------------|
+|  -a  | analysis_dir |    Yes   | the full path to the directory where the analysis file is saved OR should be created |
+|  -g  |   gpr_dirs   |    Yes   | the full path(s) to the directory or directories containing the GPR files to analyze |
+|  -o  |  output_dir  |    Yes   | the full path to the directory in which to save the output data matrix files |
+|  -p  |    prefix    |    Yes   | the prefix to add to the names of the output data matrix files |
+|  -e  |    exclude   |    No    | the list of GPR files to exclude from analysis (default: None) |
+|  -r  |   r2cutoff   |    No    | the minimum acceptable value for the R<sup>2</sup> values in the masliner output (default: 0.9) |
 
 ### analysis_dir 
 *the full path to the directory where the analysis file is saved OR should be created*
@@ -52,9 +54,9 @@ This file's name must be of the form "\*analysis\*.txt", and there must be only 
 If this is the first time an array design has been used, a new directory should be created to store the analysis file. The first two files required to make a new analysis file can be downloaded from the [Agilent SureDesign](https://earray.chem.agilent.com/suredesign/) website. The third file can be copied from one of the directories containing the GPR files associated with the array design. It is recommended that only one GPR file be copied to this directory.
 
 ### gpr_dirs
-*the full path(s) to the directory or directories containing the gpr files to analyze*
+*the full path(s) to the directory or directories containing the GPR files to analyze*
 
-This directory or these directories must contain the gpr files to analyze, separated by wavelength. Generally, there will be two directories, one at a wavelength of 488 and one at a wavelength of 635/647. In some cases, there may be only the 488 directory. The pipeline will use all files in these directories of the form "\*.gpr". To ensure proper sorting of the gpr files, the filenames must list the laser power setting before the gain setting.
+This directory or these directories must contain the GPR files to analyze, separated by wavelength. Generally, there will be two directories, one at a wavelength of 488 and one at a wavelength of 635/647. In some cases, there may be only the 488 directory. The pipeline will use all files in these directories of the form "\*.gpr" except those provided to the exclude argument. To ensure proper sorting of the GPR files, the filenames must list the laser power setting before the gain setting.
 
 ### output_dir
 *the full path to the directory in which to save the output data matrix files*
@@ -66,7 +68,17 @@ This directory will be created if it does not already exist. If it does already 
 
 This string will get added to the beginning of all data matrix files saved in output_dir as well as the log file.
 
-## Example
+### exclude
+*the list of GPR files to exclude from analysis (default: None)*
+
+These files will be ignored when running masliner and thus excluded from the analysis. Filenames must be provided WITHOUT the path (i.e. 258560610008_G600_488_1-8.gpr instead of /projectnb/siggers/data/rebekah_project/auto_pipeline/gpr/488/258560610008_G600_488_1-8.gpr). 
+
+### r2cutoff
+*the minimum acceptable value for the R<sup>2</sup> values in the masliner output (default: 0.9)*
+
+All R<sup>2</sup> values listed in the masliner output files must be above this value. If any are below, the pipeline will abort and ask you to choose additional files to exclude from analysis using the exclude argument. NOTE: Before rerunning the pipeline in this situation, you will need to remove the newly created masliner directories and their contents as well as the contents of output_dir.
+
+## Example 1
 The following is an example of how the pipeline could be called:
 ```
 python preprocess_pipeline.py -a /projectnb/siggers/data/rebekah_project/auto_pipeline/analysis_file/ -g /projectnb/siggers/data/rebekah_project/auto_pipeline/gpr/488/ /projectnb/siggers/data/rebekah_project/auto_pipeline/gpr/647/ -o /projectnb/siggers/data/rebekah_project/auto_pipeline/data_matrices/ -p ENH_CASCADE_052419
@@ -91,3 +103,10 @@ After running the pipeline, each GPR file directory will have three new subdirec
 The output directory, which should initially be empty or not exist at all, will contain the files shown below after running the pipeline. Note that the names of the data matrix files ("ENH_CASCADE_052419_\*.dat") depend on the user-specified prefix.
 
 ![output directory containing data matrices and log file](screenshots/output_dir.png)
+
+## Example 2
+The following command shows how the pipeline could be called to exclude certain GPR files and require the R<sup>2</sup> values in the masliner output to be above 0.95:
+```
+python preprocess_pipeline.py -a /projectnb/siggers/data/rebekah_project/test_masliner/analysis_file/ -g /projectnb/siggers/data/rebekah_project/test_masliner/gpr/488/ /projectnb/siggers/data/rebekah_project/test_masliner/gpr/647/ -o /projectnb/siggers/data/rebekah_project/test_masliner/data_matrices/ -p ENH_CASCADE_v2_081519 -e 25859890002_lp50_g750_647_3-8.gpr 25859890002_lp50_g750_647_4-8.gpr -r 0.95
+```
+Again, note that you must not include the path in the filenames provided to the exclude argument.
