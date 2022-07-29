@@ -15,6 +15,13 @@ This step collates the values for each spot into a matrix. It makes four separat
 
 The pipeline will also generate a log file recording progress and error messages as it runs. This file will be saved in the same user-specified directory as the output data matrices.
 
+## Installation
+To install the pipeline, navigate to the directory where you want to install it and run:
+```
+git clone https://github.com/Siggers-Lab/auto_PBM_prepro.git
+```
+This will create a new sub-directory named "auto_PBM_prepro" that contains all the necessary Python 3 scripts, including the main script, _preprocess_pipeline.py_.
+
 ## Dependencies
 The pipeline requires Python 3. To ensure Python 3 is loaded on the SCC, run the following command prior to using the pipeline:
 ```
@@ -24,7 +31,7 @@ module load python3
 ## Usage
 To run the pipeline, use the following command:
 ```
-python preprocess_pipeline.py -a ANALYSIS_DIR -g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [options]
+python /path/to/preprocess_pipeline.py -a ANALYSIS_DIR -g GPR_DIRS [GPR_DIRS ...] -o OUTPUT_DIR -p PREFIX [options]
 ```
 NOTE: You do NOT need to submit this as a batch job using the qsub command; the pipeline itself will submit batch jobs for any steps that require it.
 
